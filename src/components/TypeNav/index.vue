@@ -14,12 +14,25 @@
         <a href="###">秒杀</a>
       </nav>
       <div class="sort">
-        <div class="all-sort-list2">
-          <div class="item" v-for="c1 in categoryList" :key="c1.categoryId">
-            <h3>
-              <a href="">{{ c1.categoryName }}</a>
+        <div class="all-sort-list2" @click="goSearch">
+          <div
+            class="item"
+            :class="{ cur: currentIndex == index }"
+            v-for="(c1, index) in categoryList"
+            :key="c1.categoryId"
+            @mouseleave="leaveIndex"
+          >
+            <h3 @mouseenter="changeIndex(index)">
+              <a
+                :data-categoryname="c1.categoryName"
+                :data-category1id="c1.categoryId"
+                >{{ c1.categoryName }}</a
+              >
             </h3>
-            <div class="item-list clearfix">
+            <div
+              class="item-list clearfix"
+              :style="{ display: currentIndex == index ? 'block' : 'none' }"
+            >
               <div class="subitem">
                 <dl
                   class="fore"
@@ -27,11 +40,19 @@
                   :key="c2.categoryId"
                 >
                   <dt>
-                    <a href="">{{ c2.categoryName }}</a>
+                    <a
+                      :data-categoryname="c2.categoryName"
+                      :data-category2id="c2.categoryId"
+                      >{{ c2.categoryName }}</a
+                    >
                   </dt>
                   <dd>
                     <em v-for="c3 in c2.categoryChild" :key="c3.categoryId">
-                      <a href="">{{ c3.categoryName }}</a>
+                      <a
+                        :data-categoryname="c3.categoryName"
+                        :data-category3id="c3.categoryId"
+                        >{{ c3.categoryName }}</a
+                      >
                     </em>
                   </dd>
                 </dl>
@@ -46,16 +67,55 @@
 
 <script>
 import { mapState } from "vuex";
+import throttle from "lodash/throttle";
 
 export default {
   name: "TypeNav",
-  mounted() {
-    this.$store.dispatch("getCategory");
+  data() {
+    return {
+      currentIndex: -1,
+    };
   },
   computed: {
     ...mapState({
       categoryList: (state) => state.home.categoryList,
     }),
+  },
+  methods: {
+    // 一级分类鼠标移入
+    changeIndex: throttle(function (index) {
+      this.currentIndex = index;
+    }, 50),
+
+    // 一级分类鼠标移出
+    leaveIndex() {
+      this.currentIndex = -1;
+    },
+
+    // 跳转搜索页面
+    goSearch(event) {
+      let element = event.target;
+      console.log(element.dataset);
+      let { categoryname, category1id, category2id, category3id } =
+        element.dataset;
+      if (categoryname) {
+        let location = { name: "search" };
+        let query = { categoryName: categoryname };
+        if (category1id) {
+          query.category1Id = category1id;
+        } else if (category2id) {
+          query.category2Id = category2id;
+        } else {
+          query.category3Id = category3id;
+        }
+        location.query = query;
+        console.log(location)
+        this.$router.push(location);
+      }
+    },
+  },
+  mounted() {
+    this.$store.dispatch("getCategory");
   },
 };
 </script>
@@ -88,6 +148,7 @@ export default {
         line-height: 45px;
         font-size: 16px;
         color: #333;
+        cursor: pointer;
       }
     }
 
@@ -103,6 +164,9 @@ export default {
 
       .all-sort-list2 {
         .item {
+          &.cur {
+            background-color: skyblue;
+          }
           h3 {
             line-height: 30px;
             font-size: 14px;
@@ -113,6 +177,7 @@ export default {
 
             a {
               color: #333;
+              cursor: pointer;
             }
           }
 
@@ -131,6 +196,9 @@ export default {
               float: left;
               width: 650px;
               padding: 0 4px 0 8px;
+              a {
+                cursor: pointer;
+              }
 
               dl {
                 border-top: 1px solid #eee;
@@ -167,12 +235,6 @@ export default {
                   }
                 }
               }
-            }
-          }
-
-          &:hover {
-            .item-list {
-              display: block;
             }
           }
         }
